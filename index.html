@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>富邦銀庫存管理系統</title>
+    <style>
+        :root {
+            --mac-bg: #eceef2;
+            --mac-window-bg: rgba(255, 255, 255, 0.88);
+            --mac-titlebar-bg: rgba(246, 246, 248, 0.85);
+            --mac-toolbar-bg: rgba(240, 241, 244, 0.7);
+            --mac-card-bg: rgba(255, 255, 255, 0.95);
+            --mac-border: rgba(0, 0, 0, 0.09);
+            --mac-border-strong: rgba(0, 0, 0, 0.14);
+            --mac-text-primary: #1d1d1f;
+            --mac-text-secondary: #6e6e73;
+            --mac-text-muted: #86868b;
+            --mac-accent: #0071e3;
+            --mac-accent-hover: #0077ed;
+            --mac-green: #34c759;
+            --mac-green-hover: #30b753;
+            --mac-red: #ff3b30;
+            --mac-orange: #ff9500;
+            --mac-focus-ring: rgba(0, 113, 227, 0.35);
+            --mac-shadow-window: 0 24px 70px rgba(0, 0, 0, 0.16), 0 10px 24px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+            --mac-shadow-card: 0 3px 12px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.04);
+            --mac-shadow-button: 0 1px 2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            --radius-window: 18px;
+            --radius-card: 12px;
+            --radius-button: 8px;
+            --radius-input: 7px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang TC", "Helvetica Neue", "Microsoft JhengHei", sans-serif;
+            background: 
+                radial-gradient(at 15% 15%, rgba(147, 197, 253, 0.35) 0px, transparent 45%),
+                radial-gradient(at 85% 10%, rgba(244, 114, 182, 0.25) 0px, transparent 40%),
+                radial-gradient(at 50% 90%, rgba(196, 181, 253, 0.35) 0px, transparent 50%),
+                radial-gradient(at 85% 85%, rgba(110, 231, 183, 0.25) 0px, transparent 45%),
+                #e5e8ef;
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 30px 16px;
+            color: var(--mac-text-primary);
+            line-height: 1.45;
+        }
+
+        /* ── macOS Window Container ── */
+        .mac-window {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--mac-window-bg);
+            backdrop-filter: blur(40px) saturate(190%);
+            -webkit-backdrop-filter: blur(40px) saturate(190%);
+            border-radius: var(--radius-window);
+            box-shadow: var(--mac-shadow-window);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: macWindowAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes macWindowAppear {
+            0% { opacity: 0; transform: scale(0.97) translateY(12px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* ── macOS Titlebar ── */
+        .mac-titlebar {
+            height: 48px;
+            background: var(--mac-titlebar-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-bottom: 1px solid var(--mac-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            user-select: none;
+            position: relative;
+        }
+
+        .traffic-lights {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            width: 140px;
+        }
+
+        .traffic-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.15s ease;
+        }
+
+        .traffic-dot:hover { filter: brightness(0.92); }
+        .traffic-dot:active { transform: scale(0.9); }
+
+        .traffic-close { background-color: #ff5f56; border: 0.5px solid #e0443e; }
+        .traffic-minimize { background-color: #ffbd2e; border: 0.5px solid #dea123; }
+        .traffic-zoom { background-color: #27c93f; border: 0.5px solid #1aab29; }
+
+        .traffic-lights:hover .traffic-close::after {
+            content: "×"; font-size: 11px; font-weight: 800; color: #580000;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -58%); line-height: 1;
+        }
+        .traffic-lights:hover .traffic-minimize::after {
+            content: "–"; font-size: 10px; font-weight: 800; color: #593e00;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%); line-height: 1;
+        }
+        .traffic-lights:hover .traffic-zoom::after {
+            content: "+"; font-size: 10px; font-weight: 800; color: #004d0d;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -58%); line-height: 1;
+        }
+
+        .window-title-container {
+            flex-grow: 1;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .app-icon-squircle {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            background: linear-gradient(145deg, #007aff, #0051a8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .window-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--mac-text-primary);
+            letter-spacing: -0.2px;
+        }
+
+        .titlebar-right {
+            width: 140px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        /* ── macOS Toolbar / Company Controls ── */
+        .mac-toolbar {
+            background: var(--mac-toolbar-bg);
+            border-bottom: 1px solid var(--mac-border);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .company-control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .company-control-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--mac-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ── macOS Styled Inputs & Selects ── */
+        select, input[type="text"], input[type="number"], input[type="date"] {
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--mac-text-primary);
+            background: #ffffff;
+            border: 1px solid #d2d2d7;
+            border-radius: var(--radius-input);
+            padding: 7px 11px;
+            outline: none;
+            transition: all 0.15s ease;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        select:focus, input:focus {
+            border-color: var(--mac-accent);
+            box-shadow: 0 0 0 3px var(--mac-focus-ring);
+        }
+
+        select {
+            cursor: pointer;
+            padding-right: 26px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 9px center;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .company-select {
+            font-weight: 600;
+            min-width: 200px;
+            color: #00438a;
+            background-color: #fcfcfd;
+        }
+
+        /* ── macOS Buttons ── */
+        .btn-mac {
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: var(--radius-button);
+            border: 1px solid transparent;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            box-shadow: var(--mac-shadow-button);
+            text-decoration: none;
+        }
+
+        .btn-mac:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, #007aff 0%, #0066d6 100%);
+            color: #ffffff;
+            border-color: #005ec4;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(180deg, #1986ff 0%, #0072ee 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(180deg, #34c759 0%, #28a745 100%);
+            color: #ffffff;
+            border-color: #24963e;
+        }
+        .btn-success:hover {
+            background: linear-gradient(180deg, #44d468 0%, #2fba4f 100%);
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: var(--mac-text-primary);
+            border: 1px solid #d2d2d7;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .btn-secondary:hover {
+            background: #f5f5f7;
+            border-color: #bcbcc0;
+        }
+
+        .btn-ghost {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--mac-text-primary);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: none;
+        }
+        .btn-ghost:hover {
+            background: rgba(0, 0, 0, 0.09);
+        }
+
+        /* ── Status Pill ── */
+        .status-badge {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--mac-text-secondary);
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.25s ease;
+        }
+
+        /* ── macOS Window Body ── */
+        .mac-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ── macOS Grouped Card ── */
+        .card {
+            background: var(--mac-card-bg);
+            border-radius: var(--radius-card);
+            padding: 18px 20px;
+            box-shadow: var(--mac-shadow-card);
+            border: 1px solid var(--mac-border);
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--mac-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* ── macOS Styled Tables ── */
+        .table-container {
+            border-radius: 9px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8f8fa;
+            color: var(--mac-text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            letter-spacing: -0.1px;
+            user-select: none;
+        }
+
+        td {
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            color: var(--mac-text-primary);
+            vertical-align: middle;
+            font-variant-numeric: tabular-nums;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background 0.12s ease;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(0, 113, 227, 0.04);
+        }
+
+        .product-code {
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-weight: 600;
+            color: #005db3;
+            background: #f0f6ff;
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 12.5px;
+            border: 1px solid #dce8ff;
+        }
+
+        .low-stock {
+            color: #d70015;
+            font-weight: 600;
+            background-color: #ffeded;
+            border: 1px solid #ffd0d0;
+            padding: 3px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            font-size: 12px;
+        }
+
+        .stock-normal {
+            font-weight: 500;
+            color: #248a3d;
+            background-color: #edfaee;
+            border: 1px solid #c7f2cb;
+            padding: 3px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            font-size: 12px;
+        }
+
+        /* ── Action Buttons inside Table ── */
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            margin-right: 4px;
+            color: white;
+            font-size: 13px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+            transition: transform 0.1s ease, filter 0.15s ease;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.08);
+        }
+        .btn-action:active {
+            transform: translateY(0);
+        }
+
+        /* ── Filter Bar ── */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #f7f7f9;
+            padding: 10px 14px;
+            border-radius: 9px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-label {
+            font-size: 12.5px;
+            color: var(--mac-text-secondary);
+            font-weight: 500;
+        }
+
+        .search-input-mac {
+            flex-grow: 1;
+            min-width: 180px;
+        }
+
+        /* ── Pagination ── */
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-page {
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid #d2d2d7;
+            background: #ffffff;
+            color: var(--mac-text-primary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-page:hover:not(:disabled) {
+            background: #f5f5f7;
+            border-color: #bcbcc0;
+        }
+
+        .btn-page:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: #e5e5ea;
+        }
+
+        .page-text {
+            font-size: 12.5px;
+            color: var(--mac-text-secondary);
+            font-weight: 500;
+        }
+
+        /* ── macOS Sheet / Modal Overlay ── */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.32);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.22s ease, visibility 0.22s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            padding: 24px 28px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.1);
+            transform: scale(0.94) translateY(-10px);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            margin-bottom: 18px;
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--mac-text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--mac-text-secondary);
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+        }
+
+        .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        /* ── macOS Scrollbar Styling ── */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        @media (max-width: 680px) {
+            body { padding: 10px 8px; }
+            .mac-window { border-radius: 12px; }
+            .mac-body { padding: 14px; }
+            .mac-toolbar { padding: 10px 14px; }
+            .company-control-group { flex-direction: column; align-items: stretch; width: 100%; }
+            .company-select { width: 100%; min-width: auto; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🍎 macOS Window Frame -->
+    <div class="mac-window">
+        <!-- 標題列 (Traffic Lights + App Title + Status) -->
+        <div class="mac-titlebar">
+            <div class="traffic-lights">
+                <div class="traffic-dot traffic-close" title="關閉視窗" onclick="if(confirm('確定要關閉庫存系統分頁嗎？')) window.close();"></div>
+                <div class="traffic-dot traffic-minimize" title="最小化" onclick="toggleWindowMinimize()"></div>
+                <div class="traffic-dot traffic-zoom" title="縮放 / 全螢幕" onclick="toggleWindowFullscreen()"></div>
+            </div>
+            <div class="window-title-container">
+                <div class="app-icon-squircle">🏦</div>
+                <span class="window-title">富邦銀庫存管理系統</span>
+            </div>
+            <div class="titlebar-right">
+                <span id="loadingNotice" class="status-badge">🔄 連線中...</span>
+            </div>
+        </div>
+
+        <!-- 工具列 (公司管理控制列) -->
+        <div class="mac-toolbar">
+            <div class="company-control-group">
+                <label class="company-control-label">🏢 當前管理公司：</label>
+                <select id="currentCompanySelect" class="company-select" onchange="onCompanyChange()">
+                    <option value="">-- 請先註冊公司 --</option>
+                </select>
+            </div>
+            <button class="btn-mac btn-success" onclick="openNewCompanyPrompt()">➕ 註冊新公司</button>
+        </div>
+
+        <!-- 視窗主內容區 -->
+        <div id="macWindowBody" class="mac-body">
+            <!-- 庫存面板 -->
+            <div class="card">
+                <div class="header-section">
+                    <div class="btn-group">
+                        <button class="btn-mac btn-primary" onclick="openTxModal(true)">📥 執行進出貨作業</button>
+                        <button class="btn-mac btn-success" onclick="openAddProductModal()">➕ 新增商品品項</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">商品編號</th>
+                                <th style="width: 40%;">商品名稱</th>
+                                <th style="width: 20%;">目前庫存</th>
+                                <th style="width: 15%; min-width: 100px;">品項管理</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody">
+                            <tr><td colspan="4" style="text-align: center; color: #86868b; padding: 24px;">⏳ 載入數據中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 歷史流水帳紀錄 -->
+            <div class="card">
+                <div class="section-title">📜 歷史進出貨流水帳紀錄 (每頁 10 筆)</div>
+                <div class="filter-bar">
+                    <span class="filter-label">📅 日期區間：</span>
+                    <input type="date" id="startDate" style="width: auto;">
+                    <span class="filter-label">至</span>
+                    <input type="date" id="endDate" style="width: auto;">
+                    <input type="text" id="logKeywordSearch" class="search-input-mac" placeholder="🔍 搜尋商品編號、經辦人或備註 (Enter 篩選)..." onkeyup="if(event.key==='Enter') filterLogs()">
+                    <button class="btn-mac btn-primary" style="padding: 6px 14px;" onclick="filterLogs()">篩選</button>
+                    <button class="btn-mac btn-ghost" style="padding: 6px 12px;" onclick="clearFilter()">清除</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>時間</th>
+                                <th>商品編號</th>
+                                <th>商品名稱</th>
+                                <th>類型</th>
+                                <th>數量</th>
+                                <th>經辦人</th>
+                                <th>進出貨備註</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            <tr><td colspan="7" style="text-align: center; color: #86868b; padding: 24px;">暫無紀錄...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-container">
+                    <button id="prevBtn" class="btn-page" onclick="changePage(-1)" disabled>◀ 上一頁</button>
+                    <span id="pageInfoText" class="page-text">第 1 / 1 頁</span>
+                    <button id="nextBtn" class="btn-page" onclick="changePage(1)" disabled>下一頁 ▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈窗 A：進出貨作業登記 (macOS Sheet 樣式) -->
+    <div id="txModal" class="modal-overlay" onclick="if(event.target.id==='txModal') openTxModal(false)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">📦 物流進出貨登記</h3>
+            </div>
+            <div class="form-group">
+                <label>當前管理公司</label>
+                <input type="text" id="txTargetCompany" disabled style="background:#f2f2f7; color:#6e6e73;">
+            </div>
+            <div class="form-group">
+                <label>選擇商品 (支援模糊比對)</label>
+                <input type="text" id="productSearch" list="productDataList" placeholder="輸入商品名稱或代碼..." oninput="onProductSelect()">
+                <datalist id="productDataList"></datalist>
+                <div id="stockInfo" style="margin-top:6px; display:none; color:#248a3d; font-weight:600; font-size:12.5px;">當前庫存：<span id="currentStockNum">0</span> 件</div>
+            </div>
+            <div class="form-group">
+                <label>作業類型</label>
+                <select id="actionType">
+                    <option value="IN">商品進貨 (+)</option>
+                    <option value="OUT">商品出貨 (-)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>數量</label>
+                <input type="number" id="quantity" min="1" value="1">
+            </div>
+            <div class="form-group">
+                <label>操作經辦人</label>
+                <input type="text" id="operator" placeholder="請輸入經辦人姓名">
+            </div>
+            <div class="form-group">
+                <label>進出貨備註</label>
+                <input type="text" id="remark" placeholder="選填備註說明">
+            </div>
+            <div class="modal-actions">
+                <button id="submitBtn" class="btn-mac btn-primary" style="width: 100%;" onclick="submitData()">確認送出登記</button>
+                <button class="btn-mac btn-secondary" style="width: 100%;" onclick="openTxModal(false)">取消關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 視窗 B：建立與修改品項作業 (macOS Sheet 樣式) -->
+    <div id="manageModal" class="modal-overlay" onclick="if(event.target.id==='manageModal') closeManageModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="manageTitle" class="modal-title">➕ 建立全新商品品項</h3>
+            </div>
+            <div class="form-group">
+                <label>所屬公司</label>
+                <input type="text" id="manageTargetCompany" disabled style="background:#f2f2f7; color:#6e6e73;">
+            </div>
+            <div class="form-group">
+                <label>商品編號</label>
+                <input type="text" id="mId" placeholder="例如：FB-001">
+            </div>
+            <div class="form-group">
+                <label>商品名稱</label>
+                <input type="text" id="mName" placeholder="例如：富邦存摺封面夾">
+            </div>
+            <div class="modal-actions">
+                <button id="manageBtn" class="btn-mac btn-success" style="width: 100%;" onclick="submitManage()">確認送出</button>
+                <button class="btn-mac btn-secondary" style="width: 100%;" onclick="closeManageModal()">取消關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbwK-Z8MzYgPLxXXvq4w8FVmA7O9qQxyCViyM6t_vxcwJV2-sTQKgI_6jOQ2PB6hDelH/exec';
+        let allProductsRaw = [], allLogsRaw = [], globalProducts = [], globalLogs = [], currentFilteredLogs = [];
+        let currentPage = 1, rowsPerPage = 10, currentMode = "ADD";
+
+        window.addEventListener('DOMContentLoaded', loadProducts);
+
+        // macOS 視窗互動輔助 (最小化與全螢幕切換)
+        function toggleWindowMinimize() {
+            const body = document.getElementById('macWindowBody');
+            if (body.style.display === 'none') {
+                body.style.display = 'flex';
+            } else {
+                body.style.display = 'none';
+            }
+        }
+
+        function toggleWindowFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function openAddProductModal() {
+            const comp = document.getElementById('currentCompanySelect').value;
+            if (!comp) {
+                alert('請先選擇或註冊公司！');
+                return;
+            }
+            currentMode = 'ADD';
+            document.getElementById('manageTargetCompany').value = comp;
+            document.getElementById('manageTitle').innerText = '➕ 建立全新商品品項';
+            document.getElementById('mId').disabled = false;
+            document.getElementById('mId').value = '';
+            document.getElementById('mName').value = '';
+            document.getElementById('manageModal').classList.add('active');
+        }
+
+        function openTxModal(show) {
+            const comp = document.getElementById('currentCompanySelect').value;
+            if (!comp && show) { alert('請先選擇管理公司！'); return; }
+            document.getElementById('txTargetCompany').value = comp;
+            document.getElementById('txModal').classList.toggle('active', show);
+            if (!show) { 
+                document.getElementById('productSearch').value = ''; 
+                document.getElementById('quantity').value = '1'; 
+                document.getElementById('remark').value = ''; 
+                document.getElementById('stockInfo').style.display = 'none'; 
+            }
+        }
+
+        function closeManageModal() { 
+            document.getElementById('manageModal').classList.remove('active'); 
+        }
+
+        function openNewCompanyPrompt() {
+            const newCompany = prompt("請輸入欲新增的公司或銀行名稱：");
+            if (newCompany && newCompany.trim()) {
+                const compName = newCompany.trim();
+                const select = document.getElementById('currentCompanySelect');
+                let exists = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === compName) { exists = true; break; }
+                }
+                if (!exists) {
+                    const opt = document.createElement('option'); opt.value = compName; opt.textContent = compName; select.appendChild(opt);
+                }
+                select.value = compName; onCompanyChange();
+                alert(`公司 [${compName}] 已切換！\n請點擊「新增商品品項」建立第一筆庫存商品。`);
+            }
+        }
+
+        async function loadProducts() {
+            const notice = document.getElementById('loadingNotice');
+            try {
+                notice.innerHTML = '🔄 同步中...';
+                notice.style.background = 'rgba(0, 0, 0, 0.05)';
+                notice.style.color = 'var(--mac-text-secondary)';
+                
+                const response = await fetch(apiUrl);
+                const result = await response.json();
+                if (result.status === "success") {
+                    allProductsRaw = result.products || []; 
+                    allLogsRaw = result.logs || [];
+                    const select = document.getElementById('currentCompanySelect');
+                    const savedValue = select.value; 
+                    select.innerHTML = '';
+                    
+                    if (result.companies && result.companies.length > 0) {
+                        result.companies.forEach(comp => {
+                            const opt = document.createElement('option'); opt.value = comp; opt.textContent = comp; select.appendChild(opt);
+                        });
+                        select.value = savedValue && result.companies.includes(savedValue) ? savedValue : result.companies;
+                    } else { 
+                        select.innerHTML = '<option value="">-- 請先註冊公司 --</option>'; 
+                    }
+                    onCompanyChange();
+                    notice.innerHTML = '🟢 雲端同步完成';
+                    notice.style.background = '#dcfce7';
+                    notice.style.color = '#15803d';
+                    notice.style.border = '1px solid #bbf7d0';
+                }
+            } catch (err) { 
+                notice.innerHTML = '🔴 連線失敗'; 
+                notice.style.background = '#fee2e2';
+                notice.style.color = '#b91c1c';
+                notice.style.border = '1px solid #fecaca';
+            }
+        }
+
+        function onCompanyChange() {
+            const comp = document.getElementById('currentCompanySelect').value;
+            globalProducts = allProductsRaw.filter(p => p.company_name === comp);
+            globalLogs = allLogsRaw.filter(l => l.company_name === comp);
+            currentFilteredLogs = [...globalLogs];
+            const datalist = document.getElementById('productDataList'); 
+            datalist.innerHTML = '';
+            globalProducts.forEach(p => {
+                const opt = document.createElement('option'); 
+                opt.value = `${p.product_name} [${p.product_id}]`; 
+                datalist.appendChild(opt);
+            });
+            renderStockTable(); 
+            currentPage = 1; 
+            renderLogTable();
+        }
+
+        function renderStockTable() {
+            const tbody = document.getElementById('stockTableBody'); 
+            tbody.innerHTML = '';
+            if (globalProducts.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#86868b; padding:28px;">該公司目前無商品，請點擊上方「➕ 新增商品品項」。</td></tr>'; 
+                return; 
+            }
+            globalProducts.forEach(p => {
+                const tr = document.createElement('tr');
+                const stockCell = p.current_stock <= 5 
+                    ? `<span class="low-stock">⚠️ ${p.current_stock} 件 (庫存偏低)</span>` 
+                    : `<span class="stock-normal">${p.current_stock} 件</span>`;
+                
+                tr.innerHTML = `
+                    <td><span class="product-code">${p.product_id}</span></td>
+                    <td style="font-weight: 500;">${p.product_name}</td>
+                    <td>${stockCell}</td>
+                    <td id="act-${p.product_id}"></td>
+                `;
+                tbody.appendChild(tr);
+                
+                const cell = document.getElementById(`act-${p.product_id}`);
+                const eBtn = document.createElement('button'); 
+                eBtn.className = "btn-action btn-edit"; 
+                eBtn.innerText = "✏️";
+                eBtn.title = "編輯品項名稱";
+                eBtn.style.backgroundColor = "#f59e0b";
+                eBtn.onclick = function() { 
+                    currentMode = 'EDIT'; 
+                    document.getElementById('manageTargetCompany').value = document.getElementById('currentCompanySelect').value; 
+                    document.getElementById('manageTitle').innerText = '✏️ 修改商品名稱'; 
+                    document.getElementById('mId').disabled = true; 
+                    document.getElementById('mId').value = p.product_id; 
+                    document.getElementById('mName').value = p.product_name; 
+                    document.getElementById('manageModal').classList.add('active'); 
+                };
+
+                const dBtn = document.createElement('button'); 
+                dBtn.className = "btn-action btn-delete"; 
+                dBtn.innerText = "🗑️";
+                dBtn.title = "刪除品項";
+                dBtn.style.backgroundColor = "#ef4444";
+                dBtn.onclick = function() { 
+                    deleteProduct(p.product_id, p.current_stock); 
+                };
+
+                cell.appendChild(eBtn); 
+                cell.appendChild(dBtn);
+            });
+        }
+
+        function renderLogTable() {
+            const tbody = document.getElementById('logTableBody'); 
+            if (!tbody) return; 
+            tbody.innerHTML = '';
+            const total = currentFilteredLogs.length; 
+            const pages = Math.ceil(total / rowsPerPage) || 1;
+            if (currentPage > pages) currentPage = pages;
+            const pData = currentFilteredLogs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+            
+            if (pData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#86868b; padding:28px;">🔍 無相符之流水帳紀錄。</td></tr>';
+                document.getElementById('pageInfoText').innerText = `第 1 / 1 頁`;
+                document.getElementById('prevBtn').disabled = document.getElementById('nextBtn').disabled = true; 
+                return;
+            }
+
+            pData.forEach(l => {
+                const tr = document.createElement('tr'); 
+                const b = l.action_type === "進貨" 
+                    ? '<span style="color:#15803d; background:#ecfdf5; border:1px solid #bbf7d0; padding:2px 8px; border-radius:12px; font-weight:600; font-size:12px;">📥 進貨</span>' 
+                    : '<span style="color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; padding:2px 8px; border-radius:12px; font-weight:600; font-size:12px;">📤 出貨</span>';
+                
+                tr.innerHTML = `
+                    <td style="color:#6e6e73; font-size:12.5px;">${l.timestamp}</td>
+                    <td><span class="product-code">${l.product_id}</span></td>
+                    <td style="font-weight: 500;">${l.product_name || '-'}</td>
+                    <td>${b}</td>
+                    <td style="font-weight: 600;">${l.quantity} 件</td>
+                    <td><span style="color:#4b5563;">👤 ${l.operator}</span></td>
+                    <td style="color:#6e6e73;">${l.remark || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('pageInfoText').innerText = `第 ${currentPage} / ${pages} 頁 (共 ${total} 筆)`;
+            document.getElementById('prevBtn').disabled = (currentPage === 1); 
+            document.getElementById('nextBtn').disabled = (currentPage === pages);
+        }
+
+        function changePage(dir) { 
+            currentPage += dir; 
+            renderLogTable(); 
+        }
+        
+        function filterLogs() {
+            const s = document.getElementById('startDate').value, 
+                  e = document.getElementById('endDate').value, 
+                  kw = document.getElementById('logKeywordSearch').value.trim().toLowerCase();
+            let st = s ? s + " 00:00:00" : "", et = e ? e + " 23:59:59" : "";
+            currentFilteredLogs = globalLogs.filter(l => {
+                if (st && l.timestamp < st) return false; 
+                if (et && l.timestamp > et) return false;
+                if (kw) {
+                    return l.product_id.toLowerCase().includes(kw) || 
+                           (l.product_name || '').toLowerCase().includes(kw) || 
+                           l.action_type.toLowerCase().includes(kw) || 
+                           l.operator.toLowerCase().includes(kw) || 
+                           (l.remark || '').toLowerCase().includes(kw);
+                }
+                return true;
+            });
+            currentPage = 1; 
+            renderLogTable();
+        }
+        
+        function clearFilter() { 
+            document.getElementById('startDate').value = ''; 
+            document.getElementById('endDate').value = ''; 
+            document.getElementById('logKeywordSearch').value = ''; 
+            currentFilteredLogs = [...globalLogs]; 
+            currentPage = 1; 
+            renderLogTable(); 
+        }
+        
+        function onProductSelect() {
+            const val = document.getElementById('productSearch').value;
+            const match = globalProducts.find(p => `${p.product_name} [${p.product_id}]` === val);
+            if (match) { 
+                document.getElementById('currentStockNum').innerText = match.current_stock; 
+                document.getElementById('stockInfo').style.display = 'block'; 
+            } else { 
+                document.getElementById('stockInfo').style.display = 'none'; 
+            }
+        }
+
+        // 🌟 新增商品品項邏輯（含狀態重置解鎖）
+        async function submitManage() {
+            const btn = document.getElementById('manageBtn');
+            try {
+                const comp = document.getElementById('currentCompanySelect').value;
+                const id = document.getElementById('mId').value.trim(), 
+                      name = document.getElementById('mName').value.trim();
+                if (!id || !name) return alert('欄位不可為空！');
+                
+                // 鎖定按鈕防止重複連擊
+                btn.disabled = true;
+                btn.innerText = '⏳ 處理中...';
+                
+                const pl = new URLSearchParams(); 
+                pl.append('company_name', comp);
+                if (currentMode === "ADD") { 
+                    pl.append('action_type', 'ADD_PRODUCT'); 
+                    pl.append('new_product_id', id); 
+                    pl.append('new_product_name', name); 
+                } else { 
+                    pl.append('action_type', 'UPDATE_PRODUCT'); 
+                    pl.append('product_id', id); 
+                    pl.append('update_product_name', name); 
+                }
+                
+                const res = await fetch(apiUrl, { method: 'POST', body: pl, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+                const r = await res.json();
+                
+                alert(r.message);
+                if (r.status === "success") {
+                    await loadProducts();
+                    closeManageModal();
+                }
+            } catch {
+                alert('連線異常。');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '確認送出';
+            }
+        }
+
+        async function deleteProduct(id, stock) {
+            const comp = document.getElementById('currentCompanySelect').value;
+            if (stock > 0) return alert(`該商品尚有 ${stock} 件庫存，無法刪除！`);
+            if (!confirm(`⚠️ 確定要永久刪除商品編號 [${id}] 嗎？`)) return;
+            const pl = new URLSearchParams(); 
+            pl.append('action_type', 'DELETE_PRODUCT'); 
+            pl.append('company_name', comp); 
+            pl.append('product_id', id);
+            try { 
+                await fetch(apiUrl, { method: 'POST', body: pl, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }); 
+                await loadProducts(); 
+            } catch {}
+        }
+
+        // 🌟 進出貨登記作業提交（含狀態重置解鎖）
+        async function submitData() {
+            const btn = document.getElementById('submitBtn');
+            try {
+                const comp = document.getElementById('currentCompanySelect').value;
+                const val = document.getElementById('productSearch').value, 
+                      action = document.getElementById('actionType').value;
+                const qty = document.getElementById('quantity').value, 
+                      user = document.getElementById('operator').value.trim(), 
+                      remarkVal = document.getElementById('remark').value.trim();
+                const match = globalProducts.find(p => `${p.product_name} [${p.product_id}]` === val);
+                if (!match || !user) return alert('請選擇商品並填寫經辦人！');
+                
+                // 鎖定按鈕防止重複連擊
+                btn.disabled = true;
+                btn.innerText = '⏳ 處理中...';
+                
+                const pl = new URLSearchParams(); 
+                pl.append('company_name', comp); 
+                pl.append('product_id', match.product_id); 
+                pl.append('action_type', action); 
+                pl.append('quantity', qty); 
+                pl.append('operator', user); 
+                pl.append('remark', remarkVal);
+                
+                const res = await fetch(apiUrl, { method: 'POST', body: pl, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+                const r = await res.json();
+                
+                if (r.status === "success") {
+                    alert(`【成功】最新庫存: ${r.current_stock} 件`);
+                    await loadProducts();
+                    openTxModal(false);
+                } else {
+                    alert(`【失敗】${r.message}`);
+                }
+            } catch {
+                openTxModal(false);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '確認送出登記';
+            }
+        }
+    </script>
+</body>
+</html>
