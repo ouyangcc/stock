@@ -657,6 +657,7 @@
                     <div class="btn-group">
                         <button class="btn-mac btn-primary" onclick="openTxModal(true)">📥 執行進出貨作業</button>
                         <button class="btn-mac btn-success" onclick="openAddProductModal()">➕ 新增商品品項</button>
+                        <button class="btn-mac btn-secondary" onclick="exportStockCSV()">📊 匯出庫存 CSV</button>
                     </div>
                 </div>
                 <div class="table-container">
@@ -687,6 +688,7 @@
                     <input type="text" id="logKeywordSearch" class="search-input-mac" placeholder="🔍 搜尋商品編號、經辦人或備註 (Enter 篩選)..." onkeyup="if(event.key==='Enter') filterLogs()">
                     <button class="btn-mac btn-primary" style="padding: 6px 14px;" onclick="filterLogs()">篩選</button>
                     <button class="btn-mac btn-ghost" style="padding: 6px 12px;" onclick="clearFilter()">清除</button>
+                    <button class="btn-mac btn-secondary" style="padding: 6px 12px; margin-left: auto;" onclick="exportLogsCSV()">📊 匯出流水帳 CSV</button>
                 </div>
                 <div class="table-container">
                     <table>
@@ -1145,6 +1147,91 @@
                 btn.disabled = false;
                 btn.innerText = '確認送出登記';
             }
+        }
+
+        // 🌟 匯出 CSV 功能核心模組
+        function downloadCSV(filename, csvContent) {
+            // 加入 UTF-8 BOM (\uFEFF) 確保 Excel (Windows/Mac) 開啟繁體中文不亂碼
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function formatCSVField(val) {
+            if (val === null || val === undefined) return '""';
+            const str = String(val).replace(/"/g, '""');
+            return `"${str}"`;
+        }
+
+        function exportStockCSV() {
+            const comp = document.getElementById('currentCompanySelect').value;
+            if (!comp) {
+                alert('請先選擇或註冊管理公司！');
+                return;
+            }
+            if (!globalProducts || globalProducts.length === 0) {
+                alert('該公司目前無任何庫存商品可匯出！');
+                return;
+            }
+
+            const headers = ['所屬公司', '商品編號', '商品名稱', '目前庫存'];
+            const rows = [headers.map(formatCSVField).join(',')];
+
+            globalProducts.forEach(p => {
+                const row = [
+                    p.company_name || comp,
+                    p.product_id,
+                    p.product_name,
+                    p.current_stock
+                ];
+                rows.push(row.map(formatCSVField).join(','));
+            });
+
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            const filename = `${comp}_庫存清單_${dateStr}.csv`;
+            downloadCSV(filename, rows.join('\r\n'));
+        }
+
+        function exportLogsCSV() {
+            const comp = document.getElementById('currentCompanySelect').value;
+            if (!comp) {
+                alert('請先選擇或註冊管理公司！');
+                return;
+            }
+            if (!currentFilteredLogs || currentFilteredLogs.length === 0) {
+                alert('目前無任何歷史流水帳紀錄可匯出！');
+                return;
+            }
+
+            const headers = ['紀錄時間', '所屬公司', '商品編號', '商品名稱', '作業類型', '數量', '操作經辦人', '進出貨備註'];
+            const rows = [headers.map(formatCSVField).join(',')];
+
+            currentFilteredLogs.forEach(l => {
+                const row = [
+                    l.timestamp,
+                    l.company_name || comp,
+                    l.product_id,
+                    l.product_name || '',
+                    l.action_type,
+                    l.quantity,
+                    l.operator,
+                    l.remark || ''
+                ];
+                rows.push(row.map(formatCSVField).join(','));
+            });
+
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            const filename = `${comp}_進出貨流水帳_${dateStr}.csv`;
+            downloadCSV(filename, rows.join('\r\n'));
         }
     </script>
 </body>
